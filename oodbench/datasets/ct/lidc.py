@@ -1,6 +1,6 @@
 import numpy as np
 from amid import CacheToDisk
-from amid.lidc import LIDC as AmidLIDC
+from amid.lidc import LIDC
 from connectome import Chain, Filter, Transform, Apply, CacheToRam
 from sklearn.model_selection import train_test_split
 
@@ -22,7 +22,7 @@ class RenameFieldsLIDC(Transform):
 
 
 lidc = Chain(
-    AmidLIDC(),
+    LIDC(),
     RenameFieldsLIDC(),
     Filter(lambda mask: not np.any(mask)),
     Rescale(new_spacing=CT_COMMON_SPACING),
