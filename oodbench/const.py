@@ -1,5 +1,7 @@
 
 
-MRI_COMMON_SPACING: tuple = (1., 1., 1.5)
+CT_COMMON_SPACING = (1., 1., 1.5)
+MRI_COMMON_SPACING = (1., 1., 1.5)
 RANDOM_STATE: int = 0xBadFace
-TEST_SIZE: float = 0.33
+TEST_SIZE_CT: float = 0.20
+TEST_SIZE_MRI: float = 0.33

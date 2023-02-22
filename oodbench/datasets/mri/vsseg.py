@@ -1,14 +1,14 @@
 import numpy as np
 from amid import CacheToDisk
-from amid.vs_seg import VSSEG as AmidVSSEG, CanonicalMRIOrientation
+from amid.vs_seg import VSSEG, CanonicalMRIOrientation
 from connectome import Chain, Filter, Transform, Apply, CacheToRam
 from sklearn.model_selection import train_test_split
 
-from ...const import RANDOM_STATE, TEST_SIZE, MRI_COMMON_SPACING
+from ...const import RANDOM_STATE, TEST_SIZE_MRI, MRI_COMMON_SPACING
 from ..transforms import Rescale, ScaleIntensityMRI, AddShape, TumorCenters
 
 
-__all__ = ['VSSEG', 'VSSEG_TRAIN_IDS', 'VSSEG_TEST_IDS', ]
+__all__ = ['vsseg', 'vsseg_train_ids', 'vsseg_test_ids', ]
 
 
 class RenameFieldsVSSEG(Transform):
@@ -18,8 +18,8 @@ class RenameFieldsVSSEG(Transform):
         return schwannoma
 
 
-VSSEG = Chain(
-    AmidVSSEG(),
+vsseg = Chain(
+    VSSEG(),
     Filter(lambda modality: modality == 'T1'),
     Filter(lambda meningioma: meningioma is None),
     Filter(lambda schwannoma: schwannoma is not None),
@@ -36,4 +36,4 @@ VSSEG = Chain(
 )
 
 
-VSSEG_TRAIN_IDS, VSSEG_TEST_IDS = train_test_split(VSSEG.ids, test_size=TEST_SIZE, random_state=RANDOM_STATE)
+vsseg_train_ids, vsseg_test_ids = train_test_split(vsseg.ids, test_size=TEST_SIZE_MRI, random_state=RANDOM_STATE)

@@ -35,6 +35,14 @@ class Rescale(Transform):
         return zoom(mask.astype(np.float32), _scale_factor, order=_order) > 0.5
 
 
+def min_max_scale(image: np.ndarray):
+    min_val = image.min()
+    max_val = image.max()
+    if min_val == max_val:
+        raise ValueError('The scale range is zero.')
+    return np.array((image.astype(np.float32) - min_val) / (max_val - min_val), dtype=np.float32)
+
+
 class ScaleIntensityMRI(Transform):
     __inherit__ = True
 
@@ -47,15 +55,22 @@ class ScaleIntensityMRI(Transform):
 
         image = np.float32(image)
         image = np.clip(image, *np.percentile(image, [_min_q, _max_q]))
+        return min_max_scale(image)
 
-        image -= image.min()
-        image_max = image.max()
-        if image_max == 0:
-            raise ValueError('The scale range is zero.')
-        else:
-            image /= image_max
 
-        return image
+class ScaleIntensityCT(Transform):
+    __inherit__ = True
+
+    # Standard lung window by default:
+    _min_hu: float = -1350
+    _max_hu: float = 300
+
+    def image(image, _min_hu, _max_hu):
+        if _max_hu <= _min_hu:
+            raise ValueError(f'`min_hu` should be less than `max_hu`; {_min_hu} and {_max_hu} are given.')
+
+        image = np.clip(image, _min_hu, _max_hu)
+        return min_max_scale(image)
 
 
 class AddShape(Transform):

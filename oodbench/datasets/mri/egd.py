@@ -1,13 +1,13 @@
 import numpy as np
 from amid import CacheToDisk
-from amid.egd import EGD as AmidEGD
+from amid.egd import EGD
 from connectome import Chain, Transform, Apply, Filter
 
 from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation
 from ...const import MRI_COMMON_SPACING
 
 
-__all__ = ['EGD', 'EGD_TEST_IDS', ]
+__all__ = ['egd', 'egd_test_ids', ]
 
 
 class RenameFieldsEGD(Transform):
@@ -20,8 +20,8 @@ class RenameFieldsEGD(Transform):
         return voxel_spacing
 
 
-EGD = Chain(
-    AmidEGD(),
+egd = Chain(
+    EGD(),
     Filter(lambda modality: modality == 'T1GD'),
     Filter(lambda field: field == 1.5),
     Filter(lambda manufacturer: manufacturer == 'SIEMENS'),
@@ -36,4 +36,4 @@ EGD = Chain(
 )
 
 
-EGD_TEST_IDS = EGD.ids
+egd_test_ids = egd.ids

@@ -1,13 +1,13 @@
 import numpy as np
 from amid import CacheToDisk
-from amid.cc359 import CC359 as AmidCC359
+from amid.cc359 import CC359
 from connectome import Chain, Transform, Apply
 
 from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation
 from ...const import MRI_COMMON_SPACING
 
 
-__all__ = ['CC359', 'CC359_TEST_IDS', ]
+__all__ = ['cc359', 'cc359_test_ids', ]
 
 
 class RenameFieldsCC359(Transform):
@@ -20,8 +20,8 @@ class RenameFieldsCC359(Transform):
         return voxel_spacing
 
 
-CC359 = Chain(
-    AmidCC359(),
+cc359 = Chain(
+    CC359(),
     RenameFieldsCC359(),
     CanonicalMRIOrientation(),
     Rescale(new_spacing=MRI_COMMON_SPACING),
@@ -33,4 +33,4 @@ CC359 = Chain(
 )
 
 
-CC359_TEST_IDS = CC359.ids
+cc359_test_ids = cc359.ids
