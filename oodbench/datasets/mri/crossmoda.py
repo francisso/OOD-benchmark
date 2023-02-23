@@ -1,5 +1,5 @@
 import numpy as np
-from amid import CacheToDisk
+from amid import CacheToDisk, CacheColumns
 from amid.crossmoda import CrossMoDA
 from connectome import Filter, Transform, Apply, chained
 

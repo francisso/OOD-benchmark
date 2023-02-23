@@ -1,7 +1,7 @@
 import numpy as np
-from amid import CacheToDisk
+from amid import CacheToDisk, CacheColumns
 from amid.ct_ich import CT_ICH
-from connectome import Transform, Apply, chained, CacheColumns
+from connectome import Transform, Apply, chained
 
 from ...const import CT_COMMON_SPACING
 from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit

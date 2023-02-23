@@ -1,7 +1,7 @@
 import numpy as np
-from amid import CacheToDisk
+from amid import CacheToDisk, CacheColumns
 from amid.cancer_500 import MoscowCancer500
-from connectome import Transform, Apply, Filter, chained, CacheColumns
+from connectome import Transform, Apply, Filter, chained
 from connectome.interface.nodes import Output
 
 from ...const import CT_COMMON_SPACING

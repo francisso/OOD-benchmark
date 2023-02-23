@@ -1,7 +1,7 @@
 import numpy as np
-from amid import CacheToDisk
+from amid import CacheToDisk, CacheColumns
 from amid.vs_seg import VSSEG, CanonicalMRIOrientation
-from connectome import Filter, Transform, Apply, CacheToRam, chained, CacheColumns
+from connectome import Filter, Transform, Apply, CacheToRam, chained
 
 from ...const import RANDOM_STATE, TEST_SIZE_MRI, MRI_COMMON_SPACING
 from ..transforms import Rescale, ScaleIntensityMRI, AddShape, TumorCenters, TrainTestSplit

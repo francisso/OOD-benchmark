@@ -1,7 +1,7 @@
 import numpy as np
-from amid import CacheToDisk
+from amid import CacheToDisk, CacheColumns
 from amid.cc359 import CC359
-from connectome import Transform, Apply, chained, CacheColumns
+from connectome import Transform, Apply, chained
 
 from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation, TrainTestSplit
 from ...const import MRI_COMMON_SPACING
