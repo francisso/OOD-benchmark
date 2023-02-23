@@ -5,7 +5,7 @@ import numpy as np
 
 from amid import CacheToDisk, CacheColumns
 from amid.lidc import LIDC as LIDCAmid
-from connectome import Filter, Transform, Apply, CacheToRam, chained, meta
+from connectome import Filter, Transform, Apply, CacheToRam, chained
 from sklearn.model_selection import train_test_split
 
 from ...const import RANDOM_STATE, TEST_SIZE_CT, CT_COMMON_SPACING
