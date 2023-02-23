@@ -1,13 +1,13 @@
 import numpy as np
 from amid import CacheToDisk
 from amid.cc359 import CC359
-from connectome import Chain, Transform, Apply
+from connectome import Transform, Apply, chained, CacheColumns
 
-from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation
+from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation, TrainTestSplit
 from ...const import MRI_COMMON_SPACING
 
 
-__all__ = ['cc359', 'cc359_test_ids', ]
+__all__ = ['CC359', ]
 
 
 class RenameFieldsCC359(Transform):
@@ -20,17 +20,15 @@ class RenameFieldsCC359(Transform):
         return voxel_spacing
 
 
-cc359 = Chain(
-    CC359(),
+CC359 = chained(
+    TrainTestSplit(),
     RenameFieldsCC359(),
     CanonicalMRIOrientation(),
     Rescale(new_spacing=MRI_COMMON_SPACING),
     ScaleIntensityMRI(),
     AddShape(),
-    CacheToDisk('ids'),
+    CacheToDisk(('ids', 'train_ids', 'test_ids', )),
+    CacheColumns(('shape', 'spacing', )),
     Apply(image=np.float16, mask=np.bool_),
     Apply(image=np.float32, mask=np.float32)
-)
-
-
-cc359_test_ids = cc359.ids
+)(CC359)

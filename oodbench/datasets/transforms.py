@@ -1,8 +1,9 @@
 from typing import Sequence, Union
 
 import numpy as np
-from connectome import Transform
+from connectome import Transform, meta
 from imops import zoom, label
+from sklearn.model_selection import train_test_split
 
 from amid.utils import propagate_none
 
@@ -105,3 +106,24 @@ class CanonicalMRIOrientation(Transform):
 
     def spacing(spacing):
         return tuple(np.array(spacing)[[1, 0, 2]].tolist())
+
+
+class TrainTestSplit(Transform):
+    __inherit__ = True
+
+    _test_size: float = 1
+    _random_state: Union[int, None] = None
+
+    def _train_test_split(ids, _test_size, _random_state):
+        if _test_size < 1:
+            return train_test_split(ids, test_size=_test_size, random_state=_random_state)
+        else:
+            return [], ids
+
+    @meta
+    def train_ids(_train_test_split):
+        return _train_test_split[0]
+
+    @meta
+    def test_ids(_train_test_split):
+        return _train_test_split[1]

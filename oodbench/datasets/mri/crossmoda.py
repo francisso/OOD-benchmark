@@ -1,13 +1,13 @@
 import numpy as np
 from amid import CacheToDisk
 from amid.crossmoda import CrossMoDA
-from connectome import Chain, Filter, Transform, Apply
+from connectome import Filter, Transform, Apply, chained
 
 from ...const import MRI_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityMRI, AddShape, CanonicalMRIOrientation
+from ..transforms import Rescale, ScaleIntensityMRI, AddShape, CanonicalMRIOrientation, TrainTestSplit
 
 
-__all__ = ['crossmoda', 'crossmoda_test_ids', ]
+__all__ = ['CrossMoDA', ]
 
 
 class RenameFieldsCrossMoDA(Transform):
@@ -20,18 +20,16 @@ class RenameFieldsCrossMoDA(Transform):
         return pixel_spacing
 
 
-crossmoda = Chain(
-    CrossMoDA(),
+CrossMoDA = chained(
     Filter(lambda id, split: split == 'training_source' and id.split('_')[1] == 'etz'),
+    TrainTestSplit(),
     RenameFieldsCrossMoDA(),
     CanonicalMRIOrientation(),
     Rescale(new_spacing=MRI_COMMON_SPACING),
     ScaleIntensityMRI(),
     AddShape(),
-    CacheToDisk('ids'),
+    CacheToDisk(('ids', 'train_ids', 'test_ids', )),
+    CacheColumns(('shape', 'spacing', )),
     Apply(image=np.float16, mask=np.bool_),
     Apply(image=np.float32, mask=np.float32)
-)
-
-
-crossmoda_test_ids = crossmoda.ids
+)(CrossMoDA)
