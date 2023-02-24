@@ -3,4 +3,5 @@ from .ct_ich import CT_ICH
 from .lidc import LIDC
 from .lits import LiTS
 from .medseg9 import Medseg9
+from .midrc import MIDRC
 from .nsclc import NSCLC
