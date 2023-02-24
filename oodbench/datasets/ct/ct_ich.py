@@ -4,7 +4,7 @@ from amid.ct_ich import CT_ICH
 from connectome import Transform, Apply, chained
 
 from ...const import CT_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit
+from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit, CanonicalOrientation
 
 
 __all__ = ['CT_ICH', ]
@@ -20,6 +20,7 @@ class RenameFieldsCTICH(Transform):
 CT_ICH = chained(
     TrainTestSplit(),
     RenameFieldsCTICH(),
+    CanonicalOrientation(),
     Rescale(new_spacing=CT_COMMON_SPACING),
     ScaleIntensityCT(),
     AddShape(),

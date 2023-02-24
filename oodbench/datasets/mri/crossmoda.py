@@ -4,7 +4,7 @@ from amid.crossmoda import CrossMoDA
 from connectome import Filter, Transform, Apply, chained
 
 from ...const import MRI_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityMRI, AddShape, CanonicalMRIOrientation, TrainTestSplit
+from ..transforms import Rescale, ScaleIntensityMRI, AddShape, CanonicalOrientation, TrainTestSplit
 
 
 __all__ = ['CrossMoDA', ]
@@ -22,7 +22,7 @@ CrossMoDA = chained(
     Filter(lambda split: split == 'training_source'),
     TrainTestSplit(),
     RenameFieldsCrossMoDA(),
-    CanonicalMRIOrientation(flip_x=False),
+    CanonicalOrientation(flip_x=False),
     Rescale(new_spacing=MRI_COMMON_SPACING),
     ScaleIntensityMRI(),
     AddShape(),

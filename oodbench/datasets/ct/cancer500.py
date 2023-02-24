@@ -5,7 +5,7 @@ from connectome import Transform, Apply, Filter, chained
 from connectome.interface.nodes import Output
 
 from ...const import CT_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit
+from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit, CanonicalOrientation
 
 
 __all__ = ['Cancer500', ]
@@ -62,6 +62,7 @@ Cancer500 = chained(
     Filter(lambda slice_locations: filter_slice_locations(slice_locations)),
     TrainTestSplit(),
     CreateFieldsCancer500(),
+    CanonicalOrientation(flip_x=False),
     Rescale(new_spacing=CT_COMMON_SPACING),
     ScaleIntensityCT(),
     AddShape(),

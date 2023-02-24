@@ -3,7 +3,7 @@ from amid import CacheToDisk, CacheColumns
 from amid.egd import EGD
 from connectome import Transform, Apply, Filter, chained
 
-from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalMRIOrientation, TrainTestSplit
+from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalOrientation, TrainTestSplit
 from ...const import MRI_COMMON_SPACING
 
 
@@ -23,7 +23,7 @@ EGD = chained(
     Filter(lambda manufacturer: manufacturer == 'SIEMENS'),
     TrainTestSplit(),
     RenameFieldsEGD(),
-    CanonicalMRIOrientation(),
+    CanonicalOrientation(),
     Rescale(new_spacing=MRI_COMMON_SPACING),
     ScaleIntensityMRI(),
     AddShape(),

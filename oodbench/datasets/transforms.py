@@ -95,7 +95,7 @@ class TumorCenters(Transform):
         return np.int16([np.round(np.mean(np.argwhere(labels == i), axis=0)) for i in range(1, n_labels + 1)])
 
 
-class CanonicalMRIOrientation(Transform):
+class CanonicalOrientation(Transform):
     __inherit__ = True
     _flip_x: bool = True
 
