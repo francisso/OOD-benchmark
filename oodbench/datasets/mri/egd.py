@@ -1,6 +1,6 @@
 import numpy as np
-from amid import CacheToDisk, CacheColumns
 from amid.egd import EGD
+from amid.internals import CacheToDisk, CacheColumns
 from connectome import Transform, Apply, Filter, chained
 
 from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalOrientation, TrainTestSplit

@@ -1,5 +1,5 @@
 import numpy as np
-from amid import CacheToDisk, CacheColumns
+from amid.internals import CacheToDisk, CacheColumns
 from amid.medseg9 import Medseg9
 from connectome import Transform, Apply, chained
 

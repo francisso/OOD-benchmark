@@ -1,6 +1,6 @@
 import numpy as np
-from amid import CacheToDisk, CacheColumns
 from amid.crossmoda import CrossMoDA
+from amid.internals import CacheToDisk, CacheColumns
 from connectome import Filter, Transform, Apply, chained
 
 from ...const import MRI_COMMON_SPACING

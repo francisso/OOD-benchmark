@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 
-from amid import CacheToDisk, CacheColumns
+from amid.internals import CacheToDisk, CacheColumns
 from amid.lidc import LIDC as LIDCAmid, Rescale, CanonicalCTOrientation
 from connectome import Filter, Transform, Apply, CacheToRam, chained
 from sklearn.model_selection import train_test_split

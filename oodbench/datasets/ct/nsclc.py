@@ -1,5 +1,5 @@
 import numpy as np
-from amid import CacheToDisk, CacheColumns
+from amid.internals import CacheToDisk, CacheColumns
 from amid.nsclc import NSCLC
 from connectome import Apply, chained, Transform, Filter
 

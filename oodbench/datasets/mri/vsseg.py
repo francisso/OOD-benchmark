@@ -1,5 +1,5 @@
 import numpy as np
-from amid import CacheToDisk, CacheColumns
+from amid.internals import CacheToDisk, CacheColumns
 from amid.vs_seg import VSSEG, CanonicalMRIOrientation
 from connectome import Filter, Transform, Apply, CacheToRam, chained
 

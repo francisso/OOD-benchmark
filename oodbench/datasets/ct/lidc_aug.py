@@ -12,6 +12,7 @@ def decode_id(i):
     scale = float(scale)
     return base_id, aug_name, scale
 
+
 __all__ = ['LIDC_AUG', decode_id]
 
 
@@ -41,10 +42,12 @@ class LIDC_AUG(LIDC):
     def __getattr__(self, name):
         if name == "ids":
             return getattr(self._shadowed, name)
+
         def casted_to_original_id(i):
             # this will work both for original ids and modified ones
             base_id = i.split("_")[0]
             return getattr(self._shadowed, name)(base_id)
+
         return casted_to_original_id
     
     def image(self, i, debug=False):
@@ -57,9 +60,9 @@ class LIDC_AUG(LIDC):
         return transformed
 
     def mask(self, i, debug=False):
-        '''
-            Change mask only for elastic.transform augmentation, since it physically changes object positions
-        '''
+        """
+        Change mask only for elastic.transform augmentation, since it physically changes object positions
+        """
         base_id, aug_name, scale = decode_id(i)
         base_mask = self._shadowed.mask(base_id)
         if aug_name == "elastic.transform":
@@ -70,4 +73,5 @@ class LIDC_AUG(LIDC):
         if debug:
             print(aug_name, scale)
             return transformed, base_mask
+
         return transformed
