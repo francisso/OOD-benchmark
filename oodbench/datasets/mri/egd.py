@@ -16,9 +16,6 @@ class RenameFieldsEGD(Transform):
     def mask(image):
         return np.zeros_like(image, dtype=bool)
 
-    def spacing(voxel_spacing):
-        return voxel_spacing
-
 
 EGD = chained(
     Filter(lambda modality: modality == 'T1GD'),

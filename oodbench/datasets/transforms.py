@@ -97,12 +97,13 @@ class TumorCenters(Transform):
 
 class CanonicalMRIOrientation(Transform):
     __inherit__ = True
+    _flip_x: bool = True
 
-    def image(image):
-        return np.transpose(image, (1, 0, 2))[..., ::-1]
+    def image(image, _flip_x):
+        return np.transpose(image, (1, 0, 2))[::-1, :, ::-1] if _flip_x else np.transpose(image, (1, 0, 2))[..., ::-1]
 
-    def mask(mask):
-        return np.transpose(mask, (1, 0, 2))[..., ::-1]
+    def mask(mask, _flip_x):
+        return np.transpose(mask, (1, 0, 2))[::-1, :, ::-1] if _flip_x else np.transpose(mask, (1, 0, 2))[..., ::-1]
 
     def spacing(spacing):
         return tuple(np.array(spacing)[[1, 0, 2]].tolist())

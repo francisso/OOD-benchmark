@@ -16,9 +16,6 @@ class RenameFieldsCTICH(Transform):
     def mask(image):
         return np.zeros_like(image, dtype=bool)
 
-    def spacing(voxel_spacing):
-        return voxel_spacing
-
 
 CT_ICH = chained(
     TrainTestSplit(),

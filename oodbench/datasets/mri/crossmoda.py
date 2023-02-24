@@ -16,15 +16,13 @@ class RenameFieldsCrossMoDA(Transform):
     def mask(masks):
         return masks == 1
 
-    def spacing(pixel_spacing):
-        return pixel_spacing
-
 
 CrossMoDA = chained(
-    Filter(lambda id, split: split == 'training_source' and id.split('_')[1] == 'etz'),
+    Filter(lambda id: id.split('_')[1] == 'etz'),
+    Filter(lambda split: split == 'training_source'),
     TrainTestSplit(),
     RenameFieldsCrossMoDA(),
-    CanonicalMRIOrientation(),
+    CanonicalMRIOrientation(flip_x=False),
     Rescale(new_spacing=MRI_COMMON_SPACING),
     ScaleIntensityMRI(),
     AddShape(),
