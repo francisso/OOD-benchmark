@@ -5,11 +5,11 @@ from functools import lru_cache
 import hashlib
 
 import numpy as np
+import torchio as tio
 from tqdm import tqdm
 from connectome import Transform
 
 from dpipe.io import save_json, load_pred, save, load, load_json
-
 
 
 def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0.5, random_state: int = 5):
@@ -30,7 +30,8 @@ def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0
 
     if img is not None:
         img_new = t.apply(img, random_state=random_state)
-        lbl = label(np.pad(img_new, [[1, 1], [1, 1], [0, 0]]) == 0, connectivity=3)
+        lbl = label(
+            np.pad(img_new, [[1, 1], [1, 1], [0, 0]]) == 0, connectivity=3)
         lbl = lbl[1:-1, 1:-1, :]
 
         # always lbl == 1 because algorithm starts at the corner of the image.
@@ -53,7 +54,8 @@ def slice_drop_transform(img: np.ndarray, param: float = 0.5,
     if isinstance(random_state, int):
         random_state = np.random.RandomState(random_state)
 
-    drop_indexes = np.nonzero(random_state.binomial(1, param, size=img.shape[-1]))[0]
+    drop_indexes = np.nonzero(random_state.binomial(
+        1, param, size=img.shape[-1]))[0]
 
     fill_value = img.min()
 
@@ -73,7 +75,8 @@ def sample_box(img: np.ndarray, param: float = 0.5, random_state: Union[int, np.
     center_min = box_shape // 2
     center_max = img_shape - box_shape // 2
 
-    center = np.int16([random_state.randint(cmin, cmax) for cmin, cmax in zip(center_min, center_max)])
+    center = np.int16([random_state.randint(cmin, cmax)
+                      for cmin, cmax in zip(center_min, center_max)])
     return [center - box_shape // 2, center + box_shape // 2]
 
 
@@ -115,7 +118,8 @@ def contrast_transform(img: np.ndarray, param: float = 0.5,
     crop_corrected = min_max_descale(crop_corrected, minv, maxv)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_corrected
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
+            [1], box[0][2]:box[1][2]] = crop_corrected
 
     return img_new
 
@@ -129,10 +133,12 @@ def corruption_transform(img: np.ndarray, param: float = 0.5,
     crop = np.copy(img[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]])
     minv, maxv = crop.min(), crop.max()
 
-    crop_corrupted = min_max_descale(random_state.rand(*crop.shape), minv, maxv)
+    crop_corrupted = min_max_descale(
+        random_state.rand(*crop.shape), minv, maxv)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_corrupted
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
+            [1], box[0][2]:box[1][2]] = crop_corrupted
 
     return img_new
 
@@ -151,15 +157,100 @@ def pixel_shuffling_transform(img: np.ndarray, param: float = 0.5,
     crop_shuffled = np.reshape(crop_shuffled, crop_shape)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_shuffled
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
+            [1], box[0][2]:box[1][2]] = crop_shuffled
 
     return img_new
 
+
+def ghosting_transform(image, param: int = 3,
+                       random_state: int = 5):
+    param = int(param)
+    assert 1 <= param <= 5
+    num_ghosts = [(1, 2), (2, 4), (4, 6), (6, 7), (7, 10)]
+    intensity = [(.1, .1), (.1, .2), (.3, .4), (.4, .6), (.6, .99)]
+    transform = tio.Compose({
+        tio.RandomGhosting(num_ghosts=num_ghosts[param-1],
+                           intensity=intensity[param-1]): 1.0,
+    })
+    si = tio.ScalarImage(tensor=image[None, ...])
+    with transform._use_seed(random_state):
+        si = transform.apply_transform(si)
+    return si.tensor[0].numpy()
+
+
+def anisotropy_transform(image, param: int = 3,
+                         random_state: int = 5):
+    param = int(param)
+    assert 1 <= param <= 5
+    downsmapling = [(1.1, 1.5), (1.5, 2), (2, 3), (3, 4), (4, 6)]
+    transform = tio.Compose({
+        tio.RandomAnisotropy(downsampling=downsmapling[param-1]): 1.0,
+    })
+    si = tio.ScalarImage(tensor=image[None, ...])
+    with transform._use_seed(random_state):
+        si = transform.apply_transform(si)
+    return si.tensor[0].numpy()
+
+
+def spike_transform(image, param: int = 3,
+                    random_state: int = 5):
+    param = int(param)
+    assert 1 <= param <= 5
+    intensity = [(0, 0.250), (.25, .35), (.35, .5), (.5, .7), (.7, 1.2)]
+    transform = tio.Compose({
+        tio.RandomSpike(intensity=intensity[param-1]): 1.0,
+    })
+    si = tio.ScalarImage(tensor=image[None, ...])
+    with transform._use_seed(random_state):
+        si = transform.apply_transform(si)
+    return si.tensor[0].numpy()
+
+
+def bfield_transform(image, param: int = 3,
+                     random_state: int = 5):
+    # this one is slow
+    param = int(param)
+    assert 1 <= param <= 5
+    coefficients = [(0.01, 0.1), (.1, .2), (.2, .3), (.4, .5), (.5, .6)]
+    transform = tio.Compose({
+        tio.RandomBiasField(coefficients=coefficients[param-1]): 1.0,
+    })
+    si = tio.ScalarImage(tensor=image[None, ...])
+    with transform._use_seed(random_state):
+        si = transform.apply_transform(si)
+    return si.tensor[0].numpy()
+
+
+def motion_transform(image, param: int = 3,
+                     random_state: int = 5):
+    param = int(param)
+    assert 1 <= param <= 5
+    num_transforms = [1, 1, 2, 2, 3]
+    coefficients = [(0.01, 0.1), (.1, .2), (.2, .3), (.4, .5), (.5, .6)]
+    scale = [(.01, .12), (.12, .15), (.15, .2), (.2, .3), (.3, .5)]
+
+    transform = tio.Compose({
+        tio.RandomMotion(degrees=scale[param-1],
+                         translation=scale[param-1],
+                         num_transforms=num_transforms[param-1]): 1.0,
+    })
+    si = tio.ScalarImage(tensor=image[None, ...])
+    with transform._use_seed(random_state):
+        si = transform.apply_transform(si)
+    return si.tensor[0].numpy()
+
+
 aug_list = {
-        'elastic.transform': elastic_transform, 
-        'blur.transform': blur_transform, 
-        'slicedrop.transform': slice_drop_transform, 
-        'contrast.transform': contrast_transform,
-        'corruption.transform': corruption_transform,
-        'pixelshuffling.transform': pixel_shuffling_transform,
-    }
+    'elastic.transform': elastic_transform,
+    'blur.transform': blur_transform,
+    'slicedrop.transform': slice_drop_transform,
+    'contrast.transform': contrast_transform,
+    'corruption.transform': corruption_transform,
+    'pixelshuffling.transform': pixel_shuffling_transform,
+    'ghosting.transform': ghosting_transform,
+    'anisotropy.transform': anisotropy_transform,
+    'spike.transform': spike_transform,
+    'bfield.transform': bfield_transform,
+    'motion.transform': motion_transform,
+}
