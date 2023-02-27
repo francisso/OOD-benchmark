@@ -4,3 +4,4 @@ amid
 connectome>=0.4.4
 imops
 albumentations
+torchio
