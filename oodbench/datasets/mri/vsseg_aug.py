@@ -27,7 +27,6 @@ class VSSEG_AUG(Proxy):
         "slicedrop.transform": [.01, .75, .15, .25, .4],
         "contrast.transform":  [.1, .25, .4, .55, .7],
         "corruption.transform": [.1, .25, .4, .55, .7],
-        "pixelshuffling.transform": [.1,  .3, .5, .7, .9],
         "ghosting.transform": [1, 2, 3, 4, 5],
         "anisotropy.transform": [1, 2, 3, 4, 5],
         "spike.transform": [1, 2, 3, 4, 5],
