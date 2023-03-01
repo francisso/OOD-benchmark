@@ -13,10 +13,9 @@ __all__ = ['decode_id', 'AUGM_LIST', ]
 
 
 def decode_id(i):
-    base_id, aug = i.split("_")
-    aug_name, scale = aug.split(":")
+    base_id, augm_name, scale = i.split(":")
     scale = float(scale)
-    return base_id, aug_name, scale
+    return base_id, augm_name, scale
 
 
 def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0.5, random_state: int = 5):

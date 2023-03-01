@@ -28,8 +28,8 @@ class VSSEG_AUGM(Proxy):
         augmentations_list = [(k, v) for k in VSSEG_AUGM.__all_params
                               for v in VSSEG_AUGM.__all_params[k]]
 
-        # turn into "{previous id}_corruption.transform:0.4" like
-        self.test_ids = sorted(tuple([f"{i}_{k}:{v}"
+        # turn into "{previous id}:corruption.transform:0.4" like
+        self.test_ids = sorted(tuple([f"{i}:{k}:{v}"
                                       for i in self._shadowed.test_ids
                                       for (k, v) in augmentations_list]))
         self.train_ids = []
@@ -39,7 +39,7 @@ class VSSEG_AUGM(Proxy):
             return getattr(self._shadowed, name)
 
         def casted_to_original_id(i):
-            base_id = i.split('_')[0]  # this will work both for original ids and modified ones!
+            base_id = i.split(':')[0]  # this will work both for original ids and modified ones!
             return getattr(self._shadowed, name)(base_id)
 
         return casted_to_original_id
