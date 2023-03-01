@@ -1,21 +1,25 @@
-import os
-from collections import defaultdict
 from typing import Union
-from functools import lru_cache
-import hashlib
 
+import cv2
 import numpy as np
 import torchio as tio
-from tqdm import tqdm
-from connectome import Transform
+from albumentations.augmentations.geometric.transforms import ElasticTransform
+from imops import label
+from skimage.exposure import adjust_gamma
+from skimage.filters import gaussian
 
-from dpipe.io import save_json, load_pred, save, load, load_json
+
+__all__ = ['decode_id', 'AUGM_LIST', ]
+
+
+def decode_id(i):
+    base_id, aug = i.split("_")
+    aug_name, scale = aug.split(":")
+    scale = float(scale)
+    return base_id, aug_name, scale
 
 
 def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0.5, random_state: int = 5):
-    from albumentations.augmentations.geometric.transforms import ElasticTransform
-    import cv2
-    from skimage.measure import label
 
     fill_value = int(img.min()) if img is not None else 0
     shape = img.shape[:2] if img is not None else mask.shape[:2]
@@ -30,8 +34,7 @@ def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0
 
     if img is not None:
         img_new = t.apply(img, random_state=random_state)
-        lbl = label(
-            np.pad(img_new, [[1, 1], [1, 1], [0, 0]]) == 0, connectivity=3)
+        lbl = label(np.pad(img_new, [[1, 1], [1, 1], [0, 0]]) == 0, connectivity=3)
         lbl = lbl[1:-1, 1:-1, :]
 
         # always lbl == 1 because algorithm starts at the corner of the image.
@@ -45,12 +48,12 @@ def elastic_transform(img: np.ndarray, mask: np.ndarray = None, param: float = 0
 
 
 def blur_transform(img: np.ndarray, param: float = 0.5, random_state: int = 5):
-    from skimage.filters import gaussian
     return gaussian(np.float32(img), sigma=5 * param, preserve_range=True)
 
 
 def slice_drop_transform(img: np.ndarray, param: float = 0.5,
                          random_state: Union[int, np.random.RandomState] = 5):
+    # FIXME: remove `np.random.RandomState` option?
     if isinstance(random_state, int):
         random_state = np.random.RandomState(random_state)
 
@@ -75,8 +78,7 @@ def sample_box(img: np.ndarray, param: float = 0.5, random_state: Union[int, np.
     center_min = box_shape // 2
     center_max = img_shape - box_shape // 2
 
-    center = np.int16([random_state.randint(cmin, cmax)
-                      for cmin, cmax in zip(center_min, center_max)])
+    center = np.int16([random_state.randint(cmin, cmax) for cmin, cmax in zip(center_min, center_max)])
     return [center - box_shape // 2, center + box_shape // 2]
 
 
@@ -94,10 +96,7 @@ def min_max_descale(img: np.ndarray, minv, maxv):
     return img
 
 
-def contrast_transform(img: np.ndarray, param: float = 0.5,
-                       random_state: int = 5):
-    from skimage.exposure import adjust_gamma
-
+def contrast_transform(img: np.ndarray, param: float = 0.5, random_state: int = 5):
     random_state_np = np.random.RandomState(random_state)
 
     box = sample_box(img, param, random_state)
@@ -105,7 +104,7 @@ def contrast_transform(img: np.ndarray, param: float = 0.5,
     minv, maxv = crop.min(), crop.max()
 
     while minv == maxv:
-        print('resampling bbox because crop.min() == crop.max()', flush=True)
+        print('resampling bbox because crop.min() == crop.max()', flush=True)  # TODO: warn?
         random_state += 1
         random_state_np = np.random.RandomState(random_state)
 
@@ -118,14 +117,14 @@ def contrast_transform(img: np.ndarray, param: float = 0.5,
     crop_corrected = min_max_descale(crop_corrected, minv, maxv)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
-            [1], box[0][2]:box[1][2]] = crop_corrected
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_corrected
 
     return img_new
 
 
 def corruption_transform(img: np.ndarray, param: float = 0.5,
                          random_state: Union[int, np.random.RandomState] = 5):
+    # FIXME: remove `np.random.RandomState` option?
     if isinstance(random_state, int):
         random_state = np.random.RandomState(random_state)
 
@@ -137,14 +136,14 @@ def corruption_transform(img: np.ndarray, param: float = 0.5,
         random_state.rand(*crop.shape), minv, maxv)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
-            [1], box[0][2]:box[1][2]] = crop_corrupted
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_corrupted
 
     return img_new
 
 
 def pixel_shuffling_transform(img: np.ndarray, param: float = 0.5,
                               random_state: Union[int, np.random.RandomState] = 5):
+    # FIXME: remove `np.random.RandomState` option?
     if isinstance(random_state, int):
         random_state = np.random.RandomState(random_state)
 
@@ -157,21 +156,18 @@ def pixel_shuffling_transform(img: np.ndarray, param: float = 0.5,
     crop_shuffled = np.reshape(crop_shuffled, crop_shape)
 
     img_new = np.copy(img)
-    img_new[box[0][0]:box[1][0], box[0][1]:box[1]
-            [1], box[0][2]:box[1][2]] = crop_shuffled
+    img_new[box[0][0]:box[1][0], box[0][1]:box[1][1], box[0][2]:box[1][2]] = crop_shuffled
 
     return img_new
 
 
-def ghosting_transform(image, param: int = 3,
-                       random_state: int = 5):
-    param = int(param)
-    assert 1 <= param <= 5
+def ghosting_transform(image, param: int = 3, random_state: int = 5):
+    param = int(param)  # TODO: weak behavior?
+    assert 1 <= param <= 5  # FIXME: raise ValueError
     num_ghosts = [(1, 2), (2, 4), (4, 6), (6, 7), (7, 10)]
     intensity = [(.1, .1), (.1, .2), (.3, .4), (.4, .6), (.6, .99)]
     transform = tio.Compose({
-        tio.RandomGhosting(num_ghosts=num_ghosts[param-1],
-                           intensity=intensity[param-1]): 1.0,
+        tio.RandomGhosting(num_ghosts=num_ghosts[param-1], intensity=intensity[param-1]): 1.0,
     })
     si = tio.ScalarImage(tensor=image[None, ...])
     with transform._use_seed(random_state):
@@ -179,10 +175,9 @@ def ghosting_transform(image, param: int = 3,
     return si.tensor[0].numpy()
 
 
-def anisotropy_transform(image, param: int = 3,
-                         random_state: int = 5):
-    param = int(param)
-    assert 1 <= param <= 5
+def anisotropy_transform(image, param: int = 3, random_state: int = 5):
+    param = int(param)  # TODO: weak behavior?
+    assert 1 <= param <= 5  # FIXME: raise ValueError
     downsmapling = [(1.1, 1.5), (1.5, 2), (2, 3), (3, 4), (4, 6)]
     transform = tio.Compose({
         tio.RandomAnisotropy(downsampling=downsmapling[param-1]): 1.0,
@@ -193,10 +188,9 @@ def anisotropy_transform(image, param: int = 3,
     return si.tensor[0].numpy()
 
 
-def spike_transform(image, param: int = 3,
-                    random_state: int = 5):
-    param = int(param)
-    assert 1 <= param <= 5
+def spike_transform(image, param: int = 3, random_state: int = 5):
+    param = int(param)  # TODO: weak behavior?
+    assert 1 <= param <= 5  # FIXME: raise ValueError
     intensity = [(0, 0.250), (.25, .35), (.35, .5), (.5, .7), (.7, 1.2)]
     transform = tio.Compose({
         tio.RandomSpike(intensity=intensity[param-1]): 1.0,
@@ -207,11 +201,10 @@ def spike_transform(image, param: int = 3,
     return si.tensor[0].numpy()
 
 
-def bfield_transform(image, param: int = 3,
-                     random_state: int = 5):
+def bfield_transform(image, param: int = 3, random_state: int = 5):
     # this one is slow
-    param = int(param)
-    assert 1 <= param <= 5
+    param = int(param)  # TODO: weak behavior?
+    assert 1 <= param <= 5  # FIXME: raise ValueError
     coefficients = [(0.01, 0.1), (.1, .2), (.2, .3), (.4, .5), (.5, .6)]
     transform = tio.Compose({
         tio.RandomBiasField(coefficients=coefficients[param-1]): 1.0,
@@ -222,17 +215,14 @@ def bfield_transform(image, param: int = 3,
     return si.tensor[0].numpy()
 
 
-def motion_transform(image, param: int = 3,
-                     random_state: int = 5):
-    param = int(param)
-    assert 1 <= param <= 5
+def motion_transform(image, param: int = 3, random_state: int = 5):
+    param = int(param)  # TODO: weak behavior?
+    assert 1 <= param <= 5  # FIXME: raise ValueError
     num_transforms = [1, 1, 2, 2, 3]
-    coefficients = [(0.01, 0.1), (.1, .2), (.2, .3), (.4, .5), (.5, .6)]
     scale = [(.01, .12), (.12, .15), (.15, .2), (.2, .3), (.3, .5)]
 
     transform = tio.Compose({
-        tio.RandomMotion(degrees=scale[param-1],
-                         translation=scale[param-1],
+        tio.RandomMotion(degrees=scale[param-1], translation=scale[param-1],
                          num_transforms=num_transforms[param-1]): 1.0,
     })
     si = tio.ScalarImage(tensor=image[None, ...])
@@ -241,7 +231,7 @@ def motion_transform(image, param: int = 3,
     return si.tensor[0].numpy()
 
 
-aug_list = {
+AUGM_LIST = {
     'elastic.transform': elastic_transform,
     'blur.transform': blur_transform,
     'slicedrop.transform': slice_drop_transform,

@@ -1,27 +1,17 @@
 import ctypes
-from pathlib import Path
-import numpy as np
 from typing import Union
 
 from .vsseg import VSSEG as VSSEGChained
-from ..augmentations import aug_list
+from ..augmentations import AUGM_LIST, decode_id
 from ..wrappers import Proxy
 from ...const import RANDOM_STATE
+from ...typing import PathLike
 
 
-def decode_id(i):
-    base_id, aug = i.split("_")
-    aug_name, scale = aug.split(":")
-    scale = float(scale)
-    return base_id, aug_name, scale
+__all__ = ["VSSEG_AUGM", ]
 
 
-__all__ = ["VSSEG_AUG", decode_id]
-
-PathLike = Union[Path, str]
-
-
-class VSSEG_AUG(Proxy):
+class VSSEG_AUGM(Proxy):
 
     __all_params = {
         "slicedrop.transform": [.01, .75, .15, .25, .4],
@@ -35,10 +25,10 @@ class VSSEG_AUG(Proxy):
 
     def __init__(self, root: Union[PathLike, None] = None):
         super().__init__(VSSEGChained(root))
-        augmentations_list = [(k, v) for k in VSSEG_AUG.__all_params
-                              for v in VSSEG_AUG.__all_params[k]]
+        augmentations_list = [(k, v) for k in VSSEG_AUGM.__all_params
+                              for v in VSSEG_AUGM.__all_params[k]]
 
-        # turn into  {previous id}_corruption.transform:0.4 0 like
+        # turn into "{previous id}_corruption.transform:0.4" like
         self.test_ids = sorted(tuple([f"{i}_{k}:{v}"
                                       for i in self._shadowed.test_ids
                                       for (k, v) in augmentations_list]))
@@ -50,7 +40,7 @@ class VSSEG_AUG(Proxy):
 
         def casted_to_original_id(i):
             # this will work both for original ids and modified ones
-            base_id = i.split("_")[0]
+            base_id = decode_id(i)[0]
             return getattr(self._shadowed, name)(base_id)
 
         return casted_to_original_id
@@ -58,8 +48,8 @@ class VSSEG_AUG(Proxy):
     def image(self, i, debug=False):
         base_id, aug_name, scale = decode_id(i)
         base_image = self._shadowed.image(base_id)
-        transformed = aug_list[aug_name](base_image, param=scale,
-                                         random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
+        transformed = AUGM_LIST[aug_name](base_image, param=scale,
+                                          random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
         if debug:
             print(aug_name, scale)
             return transformed, base_image

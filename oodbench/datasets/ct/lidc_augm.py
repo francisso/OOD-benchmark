@@ -1,23 +1,16 @@
 import ctypes
-import numpy as np
 from typing import Union
 
-from .lidc import LIDC, PathLike
-from ..augmentations import aug_list
+from .lidc import LIDC
+from ..augmentations import AUGM_LIST, decode_id
 from ...const import RANDOM_STATE
+from ...typing import PathLike
 
 
-def decode_id(i):
-    base_id, aug = i.split("_")
-    aug_name, scale = aug.split(":")
-    scale = float(scale)
-    return base_id, aug_name, scale
+__all__ = ['LIDC_AUGM', ]
 
 
-__all__ = ['LIDC_AUG', decode_id]
-
-
-class LIDC_AUG(LIDC):
+class LIDC_AUGM(LIDC):
 
     __all_params = {
         "elastic.transform":   [0.1, 0.5, 1., 1.5, 2.0],
@@ -30,8 +23,7 @@ class LIDC_AUG(LIDC):
     def __init__(self, root: Union[PathLike, None] = None):
         super().__init__(root)
 
-        augmentations_list = [(k, v) for k in LIDC_AUG.__all_params
-                              for v in LIDC_AUG.__all_params[k]]
+        augmentations_list = [(k, v) for k in LIDC_AUGM.__all_params for v in LIDC_AUGM.__all_params[k]]
 
         # turn into  {previous id}_corruption.transform:0.4 0 like
         self.test_ids = sorted(tuple([f"{i}_{k}:{v}"
@@ -45,7 +37,7 @@ class LIDC_AUG(LIDC):
 
         def casted_to_original_id(i):
             # this will work both for original ids and modified ones
-            base_id = i.split("_")[0]
+            base_id = decode_id(i)[0]
             return getattr(self._shadowed, name)(base_id)
 
         return casted_to_original_id
@@ -53,8 +45,8 @@ class LIDC_AUG(LIDC):
     def image(self, i, debug=False):
         base_id, aug_name, scale = decode_id(i)
         base_image = self._shadowed.image(base_id)
-        transformed = aug_list[aug_name](base_image, param=scale,
-                                         random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
+        transformed = AUGM_LIST[aug_name](base_image, param=scale,
+                                          random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
 
         if debug:
             print(aug_name, scale)
@@ -68,8 +60,8 @@ class LIDC_AUG(LIDC):
         base_id, aug_name, scale = decode_id(i)
         base_mask = self._shadowed.mask(base_id)
         if aug_name == "elastic.transform":
-            transformed = aug_list[aug_name](img=None, mask=base_mask, param=scale,
-                                             random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
+            transformed = AUGM_LIST[aug_name](img=None, mask=base_mask, param=scale,
+                                              random_state=ctypes.c_uint32(RANDOM_STATE + hash(i)).value)
         else:
             transformed = base_mask
 

@@ -1,7 +1,9 @@
-numpy
-scikit-learn
+albumentations
 amid
 connectome>=0.4.4
 imops
-albumentations
+numpy
+opencv-python
+scikit-learn
+scikit-image
 torchio
