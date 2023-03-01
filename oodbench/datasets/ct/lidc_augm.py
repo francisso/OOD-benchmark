@@ -36,8 +36,7 @@ class LIDC_AUGM(LIDC):
             return getattr(self._shadowed, name)
 
         def casted_to_original_id(i):
-            # this will work both for original ids and modified ones
-            base_id = decode_id(i)[0]
+            base_id = i.split('_')[0]  # this will work both for original ids and modified ones!
             return getattr(self._shadowed, name)(base_id)
 
         return casted_to_original_id
