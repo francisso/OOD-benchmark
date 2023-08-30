@@ -1,3 +1,4 @@
 # OOD-benchmark
 
-This repository contains CT and MRI datasets to benchmark OOD Detection methods
+This repository contains CT and MRI datasets to benchmark OOD Detection methods.
+To download source data follow the https://github.com/neuro-ml/amid/ 
