@@ -1,11 +1,15 @@
+from typing import Union
+
 import numpy as np
 from amid.cancer_500 import MoscowCancer500
 from amid.internals import CacheToDisk, CacheColumns
-from connectome import Transform, Apply, Filter, chained
+from connectome import Apply, Filter, Transform, chained
 from connectome.interface.nodes import Output
 
+from ..transforms import AddShape, CanonicalOrientation, Identity, Rescale, ScaleIntensityCT, TrainTestSplit
+from ..wrappers import Proxy
 from ...const import CT_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit, CanonicalOrientation
+from ...typing import PathLike
 
 
 __all__ = ['Cancer500', ]
@@ -46,7 +50,7 @@ class CreateFieldsCancer500(Transform):
         return mask
 
     def spacing(pixel_spacing, slice_locations):
-        return (*pixel_spacing, np.diff(slice_locations).mean().item())
+        return *pixel_spacing, np.diff(slice_locations).mean().item()
 
 
 def filter_slice_locations(slice_locations, n_slices_min: int = 64, rel_delta_max: float = 1e-2):
@@ -58,16 +62,20 @@ def filter_slice_locations(slice_locations, n_slices_min: int = 64, rel_delta_ma
     return True
 
 
-Cancer500 = chained(
-    Filter(lambda slice_locations: filter_slice_locations(slice_locations)),
-    TrainTestSplit(),
-    CreateFieldsCancer500(),
-    CanonicalOrientation(flip_x=False),
-    Rescale(new_spacing=CT_COMMON_SPACING),
-    ScaleIntensityCT(),
-    AddShape(),
-    CacheToDisk(('ids', 'train_ids', 'test_ids', )),
-    CacheColumns(('shape', 'spacing', )),
-    Apply(image=np.float16, mask=np.bool_),
-    Apply(image=np.float32, mask=np.float32)
-)(MoscowCancer500)
+class Cancer500(Proxy):
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        dataset_chained = chained(
+            Filter(lambda slice_locations: filter_slice_locations(slice_locations)),
+            TrainTestSplit(),
+            CreateFieldsCancer500(),
+            CanonicalOrientation(flip_x=False),
+            Rescale(new_spacing=CT_COMMON_SPACING),
+            ScaleIntensityCT(),
+            AddShape(),
+            CacheToDisk(('ids', 'train_ids', 'test_ids',)) if use_caching else Identity(),
+            CacheColumns(('shape', 'spacing',)) if use_caching else Identity(),
+            Apply(image=np.float16, mask=np.bool_),
+            Apply(image=np.float32, mask=np.float32)
+        )(MoscowCancer500)
+
+        super().__init__(dataset_chained(root))

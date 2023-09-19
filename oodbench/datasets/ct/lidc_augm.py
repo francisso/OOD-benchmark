@@ -20,8 +20,8 @@ class LIDC_AUGM(LIDC):
         "corruption.transform": [.1, .25, .4, .55, .7],
     }
 
-    def __init__(self, root: Union[PathLike, None] = None):
-        super().__init__(root)
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        super().__init__(root, use_caching)
 
         augmentations_list = [(k, v) for k in LIDC_AUGM.__all_params for v in LIDC_AUGM.__all_params[k]]
 

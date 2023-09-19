@@ -1,9 +1,8 @@
 import ctypes
 from typing import Union
 
-from .vsseg import VSSEG as VSSEGChained
+from .vsseg import VSSEG
 from ..augmentations import AUGM_LIST, decode_id
-from ..wrappers import Proxy
 from ...const import RANDOM_STATE
 from ...typing import PathLike
 
@@ -11,7 +10,8 @@ from ...typing import PathLike
 __all__ = ["VSSEG_AUGM", ]
 
 
-class VSSEG_AUGM(Proxy):
+# class VSSEG_AUGM(Proxy):
+class VSSEG_AUGM(VSSEG):
 
     __all_params = {
         "slicedrop.transform": [.01, .75, .15, .25, .4],
@@ -23,8 +23,9 @@ class VSSEG_AUGM(Proxy):
         "motion.transform": [1, 2, 3, 4, 5],
     }
 
-    def __init__(self, root: Union[PathLike, None] = None):
-        super().__init__(VSSEGChained(root))
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        # super().__init__(VSSEGChained(root))
+        super().__init__(root, use_caching)
         augmentations_list = [(k, v) for k in VSSEG_AUGM.__all_params
                               for v in VSSEG_AUGM.__all_params[k]]
 

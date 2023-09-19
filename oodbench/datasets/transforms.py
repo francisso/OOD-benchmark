@@ -1,14 +1,16 @@
 from typing import Sequence, Union
 
 import numpy as np
+from amid.utils import propagate_none
 from connectome import Transform, meta
 from imops import zoom, label
 from sklearn.model_selection import train_test_split
 
-from amid.utils import propagate_none
+from ..typing import Numeric
 
 
-Numeric = Union[float, int]
+class Identity(Transform):
+    __inherit__ = True
 
 
 class Rescale(Transform):

@@ -1,22 +1,18 @@
-from pathlib import Path
 from typing import Union
 
 import numpy as np
-
 from amid.internals import CacheToDisk, CacheColumns
-from amid.lidc import LIDC as LIDCAmid, Rescale, CanonicalCTOrientation
+from amid.lidc import LIDC as LIDC_AMID, Rescale, CanonicalCTOrientation
 from connectome import Filter, Transform, Apply, CacheToRam, chained
 from sklearn.model_selection import train_test_split
 
 from ...const import RANDOM_STATE, TEST_SIZE_CT, CT_COMMON_SPACING
-from ..transforms import ScaleIntensityCT, AddShape, TumorCenters
+from ..transforms import AddShape, Identity, ScaleIntensityCT, TumorCenters
+from ...typing import PathLike
 from ..wrappers import Proxy
 
 
 __all__ = ['LIDC', ]
-
-
-PathLike = Union[Path, str]
 
 
 class RenameFieldsLIDC(Transform):
@@ -26,25 +22,24 @@ class RenameFieldsLIDC(Transform):
         return cancer
 
 
-LIDCChained = chained(
-    CanonicalCTOrientation(),
-    Rescale(new_spacing=CT_COMMON_SPACING),
-    RenameFieldsLIDC(),
-    Filter(lambda mask: np.any(mask)),
-    ScaleIntensityCT(),
-    AddShape(),
-    TumorCenters(),
-    CacheToDisk('ids'),
-    CacheColumns(('tumor_centers', 'n_tumors', 'shape', 'spacing', )),
-    Apply(image=np.float16, mask=np.bool_),
-    CacheToRam(),
-    Apply(image=np.float32, mask=np.float32)
-)(LIDCAmid)
-
-
 class LIDC(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None):
-        super().__init__(LIDCChained(root))
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        dataset_chained = chained(
+            CanonicalCTOrientation(),
+            Rescale(new_spacing=CT_COMMON_SPACING),
+            RenameFieldsLIDC(),
+            Filter(lambda mask: np.any(mask)),
+            ScaleIntensityCT(),
+            AddShape(),
+            TumorCenters(),
+            CacheToDisk('ids') if use_caching else Identity(),
+            CacheColumns(('tumor_centers', 'n_tumors', 'shape', 'spacing',)) if use_caching else Identity(),
+            Apply(image=np.float16, mask=np.bool_),
+            CacheToRam(),
+            Apply(image=np.float32, mask=np.float32)
+        )(LIDC_AMID)
+
+        super().__init__(dataset_chained(root))
 
         n_tumors = np.array(list(map(self.n_tumors, self.ids)))
         n_tumor_labels, n_tumor_counts = np.unique(n_tumors, return_counts=True)

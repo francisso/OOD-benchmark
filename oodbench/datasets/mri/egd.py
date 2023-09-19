@@ -1,10 +1,14 @@
-import numpy as np
-from amid.egd import EGD
-from amid.internals import CacheToDisk, CacheColumns
-from connectome import Transform, Apply, Filter, chained
+from typing import Union
 
-from ..transforms import ScaleIntensityMRI, AddShape, Rescale, CanonicalOrientation, TrainTestSplit
+import numpy as np
+from amid.egd import EGD as EGD_AMID
+from amid.internals import CacheColumns, CacheToDisk
+from connectome import Apply, Filter, Transform, chained
+
+from ..transforms import AddShape, CanonicalOrientation, Identity, Rescale, ScaleIntensityMRI, TrainTestSplit
+from ..wrappers import Proxy
 from ...const import MRI_COMMON_SPACING
+from ...typing import PathLike
 
 
 __all__ = ['EGD', ]
@@ -17,18 +21,22 @@ class RenameFieldsEGD(Transform):
         return np.zeros_like(image, dtype=bool)
 
 
-EGD = chained(
-    Filter(lambda modality: modality == 'T1GD'),
-    Filter(lambda field: field == 1.5),
-    Filter(lambda manufacturer: manufacturer == 'SIEMENS'),
-    TrainTestSplit(),
-    RenameFieldsEGD(),
-    CanonicalOrientation(),
-    Rescale(new_spacing=MRI_COMMON_SPACING),
-    ScaleIntensityMRI(),
-    AddShape(),
-    CacheToDisk(('ids', 'train_ids', 'test_ids', )),
-    CacheColumns(('shape', 'spacing', )),
-    Apply(image=np.float16, mask=np.bool_),
-    Apply(image=np.float32, mask=np.float32)
-)(EGD)
+class EGD(Proxy):
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        dataset_chained = chained(
+            Filter(lambda modality: modality == 'T1GD'),
+            Filter(lambda field: field == 1.5),
+            Filter(lambda manufacturer: manufacturer == 'SIEMENS'),
+            TrainTestSplit(),
+            RenameFieldsEGD(),
+            CanonicalOrientation(),
+            Rescale(new_spacing=MRI_COMMON_SPACING),
+            ScaleIntensityMRI(),
+            AddShape(),
+            CacheToDisk(('ids', 'train_ids', 'test_ids',)) if use_caching else Identity(),
+            CacheColumns(('shape', 'spacing',)) if use_caching else Identity(),
+            Apply(image=np.float16, mask=np.bool_),
+            Apply(image=np.float32, mask=np.float32)
+        )(EGD_AMID)
+
+        super().__init__(dataset_chained(root))

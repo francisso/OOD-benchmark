@@ -1,10 +1,14 @@
-import numpy as np
-from amid.internals import CacheToDisk, CacheColumns
-from amid.medseg9 import Medseg9
-from connectome import Transform, Apply, chained
+from typing import Union
 
+import numpy as np
+from amid.internals import CacheColumns, CacheToDisk
+from amid.medseg9 import Medseg9 as Medseg9_AMID
+from connectome import Apply, Transform, chained
+
+from ..wrappers import Proxy
+from ..transforms import AddShape, Rescale, ScaleIntensityCT, TrainTestSplit, Identity
 from ...const import CT_COMMON_SPACING
-from ..transforms import Rescale, ScaleIntensityCT, AddShape, TrainTestSplit
+from ...typing import PathLike
 
 
 __all__ = ['Medseg9', ]
@@ -31,15 +35,19 @@ class CanonicalOrientation(Transform):
         return tuple(np.array(spacing)[[1, 0, 2]].tolist())
 
 
-Medseg9 = chained(
-    TrainTestSplit(),
-    RenameFieldsMedseg9(),
-    CanonicalOrientation(),
-    Rescale(new_spacing=CT_COMMON_SPACING),
-    ScaleIntensityCT(),
-    AddShape(),
-    CacheToDisk(('ids', 'train_ids', 'test_ids', )),
-    CacheColumns(('shape', 'spacing', )),
-    Apply(image=np.float16, mask=np.bool_),
-    Apply(image=np.float32, mask=np.float32)
-)(Medseg9)
+class Medseg9(Proxy):
+    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+        dataset_chained = chained(
+            TrainTestSplit(),
+            RenameFieldsMedseg9(),
+            CanonicalOrientation(),
+            Rescale(new_spacing=CT_COMMON_SPACING),
+            ScaleIntensityCT(),
+            AddShape(),
+            CacheToDisk(('ids', 'train_ids', 'test_ids', )) if use_caching else Identity(),
+            CacheColumns(('shape', 'spacing', )) if use_caching else Identity(),
+            Apply(image=np.float16, mask=np.bool_),
+            Apply(image=np.float32, mask=np.float32)
+        )(Medseg9_AMID)
+
+        super().__init__(dataset_chained(root))
