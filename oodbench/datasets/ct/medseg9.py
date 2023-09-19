@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.internals import CacheColumns, CacheToDisk
 from amid.medseg9 import Medseg9 as Medseg9_AMID
@@ -7,8 +5,9 @@ from connectome import Apply, Transform, chained
 
 from ..wrappers import Proxy
 from ..transforms import AddShape, Rescale, ScaleIntensityCT, TrainTestSplit, Identity
+from ...config import PATH_MEDSEG9_RAW, USE_CACHING
 from ...const import CT_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['Medseg9', ]
@@ -36,7 +35,7 @@ class CanonicalOrientation(Transform):
 
 
 class Medseg9(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_MEDSEG9_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             TrainTestSplit(),
             RenameFieldsMedseg9(),

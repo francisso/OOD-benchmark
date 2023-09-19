@@ -1,10 +1,10 @@
 import ctypes
-from typing import Union
 
 from .lidc import LIDC
 from ..augmentations import AUGM_LIST, decode_id
+from ...config import PATH_LIDC_RAW, USE_CACHING
 from ...const import RANDOM_STATE
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['LIDC_AUGM', ]
@@ -20,7 +20,7 @@ class LIDC_AUGM(LIDC):
         "corruption.transform": [.1, .25, .4, .55, .7],
     }
 
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_LIDC_RAW, use_caching: bool = USE_CACHING):
         super().__init__(root, use_caching)
 
         augmentations_list = [(k, v) for k in LIDC_AUGM.__all_params for v in LIDC_AUGM.__all_params[k]]

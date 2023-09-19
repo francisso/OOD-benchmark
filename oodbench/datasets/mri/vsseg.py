@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.internals import CacheColumns, CacheToDisk
 from amid.vs_seg import VSSEG as VSSEG_AMID, CanonicalMRIOrientation
@@ -7,8 +5,9 @@ from connectome import Filter, Transform, Apply, CacheToRam, chained
 
 from ..transforms import AddShape, Identity, Rescale, ScaleIntensityMRI, TrainTestSplit, TumorCenters
 from ..wrappers import Proxy
+from ...config import PATH_VSSEG_RAW, USE_CACHING
 from ...const import RANDOM_STATE, TEST_SIZE_MRI, MRI_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 __all__ = ['VSSEG', ]
 
@@ -21,7 +20,7 @@ class RenameFieldsVSSEG(Transform):
 
 
 class VSSEG(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_VSSEG_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             Filter(lambda modality: modality == 'T1'),
             Filter(lambda meningioma: meningioma is None),

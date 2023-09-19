@@ -1,15 +1,14 @@
-from typing import Union
-
 import numpy as np
 from amid.internals import CacheToDisk, CacheColumns
 from amid.lidc import LIDC as LIDC_AMID, Rescale, CanonicalCTOrientation
 from connectome import Filter, Transform, Apply, CacheToRam, chained
 from sklearn.model_selection import train_test_split
 
-from ...const import RANDOM_STATE, TEST_SIZE_CT, CT_COMMON_SPACING
 from ..transforms import AddShape, Identity, ScaleIntensityCT, TumorCenters
-from ...typing import PathLike
 from ..wrappers import Proxy
+from ...config import PATH_LIDC_RAW, USE_CACHING
+from ...const import RANDOM_STATE, TEST_SIZE_CT, CT_COMMON_SPACING
+from ...typing import OptPathLike
 
 
 __all__ = ['LIDC', ]
@@ -23,7 +22,7 @@ class RenameFieldsLIDC(Transform):
 
 
 class LIDC(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_LIDC_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             CanonicalCTOrientation(),
             Rescale(new_spacing=CT_COMMON_SPACING),

@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.internals import CacheToDisk, CacheColumns
 from amid.lits import LiTS as LiTS_AMID, CanonicalCTOrientation, Rescale
@@ -7,8 +5,9 @@ from connectome import Apply, Transform, chained
 
 from ..transforms import AddShape, Identity, ScaleIntensityCT, TrainTestSplit
 from ..wrappers import Proxy
+from ...config import PATH_LITS_RAW, USE_CACHING
 from ...const import CT_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['LiTS', ]
@@ -22,7 +21,7 @@ class ChangeFieldsLiTS(Transform):
 
 
 class LiTS(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_LITS_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             TrainTestSplit(),
             CanonicalCTOrientation(),

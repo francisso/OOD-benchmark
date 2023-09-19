@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.cancer_500 import MoscowCancer500
 from amid.internals import CacheToDisk, CacheColumns
@@ -8,8 +6,9 @@ from connectome.interface.nodes import Output
 
 from ..transforms import AddShape, CanonicalOrientation, Identity, Rescale, ScaleIntensityCT, TrainTestSplit
 from ..wrappers import Proxy
+from ...config import PATH_CANCER500_RAW, USE_CACHING
 from ...const import CT_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['Cancer500', ]
@@ -63,7 +62,7 @@ def filter_slice_locations(slice_locations, n_slices_min: int = 64, rel_delta_ma
 
 
 class Cancer500(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_CANCER500_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             Filter(lambda slice_locations: filter_slice_locations(slice_locations)),
             TrainTestSplit(),

@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.crossmoda import CrossMoDA as CrossMoDA_AMID
 from amid.internals import CacheColumns, CacheToDisk
@@ -7,8 +5,9 @@ from connectome import Filter, Transform, Apply, chained
 
 from ..transforms import AddShape, CanonicalOrientation, Identity, Rescale, ScaleIntensityMRI, TrainTestSplit
 from ..wrappers import Proxy
+from ...config import PATH_CROSSMODA_RAW, USE_CACHING
 from ...const import MRI_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['CrossMoDA', ]
@@ -22,7 +21,7 @@ class RenameFieldsCrossMoDA(Transform):
 
 
 class CrossMoDA(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_CROSSMODA_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             Filter(lambda id: id.split('_')[1] == 'etz'),
             Filter(lambda split: split == 'training_source'),

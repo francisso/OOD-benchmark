@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.cc359 import CC359 as CC359_AMID, CanonicalMRIOrientation, Rescale
 from amid.internals import CacheColumns, CacheToDisk
@@ -7,8 +5,9 @@ from connectome import Apply, Transform, chained
 
 from ..transforms import AddShape, Identity, ScaleIntensityMRI, TrainTestSplit
 from ..wrappers import Proxy
+from ...config import PATH_CC359_RAW, USE_CACHING
 from ...const import MRI_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['CC359', ]
@@ -22,7 +21,7 @@ class RenameFieldsCC359(Transform):
 
 
 class CC359(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_CC359_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             TrainTestSplit(),
             CanonicalMRIOrientation(),

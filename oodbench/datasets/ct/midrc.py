@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from amid.internals import CacheColumns, CacheToDisk
 from amid.midrc import MIDRC as MIDRC_AMID
@@ -7,8 +5,9 @@ from connectome import Apply, Filter, Transform, chained
 
 from ..wrappers import Proxy
 from ..transforms import AddShape, CanonicalOrientation, Identity, Rescale, ScaleIntensityCT, TrainTestSplit
+from ...config import PATH_MIDRC_RAW, USE_CACHING
 from ...const import CT_COMMON_SPACING
-from ...typing import PathLike
+from ...typing import OptPathLike
 
 
 __all__ = ['MIDRC', ]
@@ -22,7 +21,7 @@ class ChangeFieldsMIDRC(Transform):
 
 
 class MIDRC(Proxy):
-    def __init__(self, root: Union[PathLike, None] = None, use_caching: bool = True):
+    def __init__(self, root: OptPathLike = PATH_MIDRC_RAW, use_caching: bool = USE_CACHING):
         dataset_chained = chained(
             Filter(lambda mask: (mask is not None) and (np.any(mask[0]) or np.any(mask[-1]))),
             TrainTestSplit(),
